@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel to CSV Converter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        input[type="file"] {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Excel to CSV Converter</h1>
+    <p>Upload an Excel file to convert it to CSV while preserving special characters.</p>
+    <input type="file" id="fileInput" accept=".xlsx, .xls">
+    <br>
+    <button onclick="convertToCSV()">Convert to CSV</button>
+
+    <script>
+        function convertToCSV() {
+            const input = document.getElementById('fileInput');
+            if (input.files.length === 0) {
+                alert('Please select an Excel file.');
+                return;
+            }
+
+            const file = input.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                // Assume the first sheet is the one we want
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+
+                // Convert the sheet to CSV
+                const csv = XLSX.utils.sheet_to_csv(worksheet, { FS: ',', RS: '\n' });
+
+                // Add BOM for UTF-8 to preserve special characters
+                const utf8BOM = '\uFEFF' + csv;
+
+                // Create a download link for the CSV
+                const blob = new Blob([utf8BOM], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = file.name.replace(/\.[^/.]+$/, "") + '.csv'; // Same name with .csv extension
+                link.click();
+
+                // Clean up the object URL
+                URL.revokeObjectURL(url);
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+    </script>
+</body>
+</html>
